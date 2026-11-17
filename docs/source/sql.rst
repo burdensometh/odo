@@ -128,6 +128,34 @@ route when they are available.::
     sqlalchemy.Table <- CSV
 
 
+Resumable synchronization
+-------------------------
+
+``odo.sync`` incrementally copies an append-only SQL table into another
+database, e.g. to keep a SQLite replica of a growing table up to date.
+Rows must carry a strictly increasing *cursor* -- typically a non-null
+update timestamp plus a unique id::
+
+    >>> from odo.sync import sync
+    >>> t = sync('sqlite:///src.db::events',        # doctest: +SKIP
+    ...          'sqlite:///dst.db::events',
+    ...          cursor=('updated_at', 'id'))
+
+Each call fixes the current maximum cursor of the source as the upper
+bound of the round and copies only the rows between the last committed
+cursor and that bound, in cursor order.  Rows appended to the source
+while a round runs are left for the next round.  Every batch of rows is
+committed in a single transaction together with the new cursor position,
+which is stored in a bookkeeping table (``_odo_sync_state``) inside the
+target database.  A crash or disconnect can therefore only lose the
+in-flight batch: re-running ``sync`` -- even from a restarted process --
+resumes after the last committed batch, never duplicating rows and never
+skipping rows that share the same timestamp.  The checkpoint also records
+a fingerprint of the source, target and cursor definitions; a call that
+changes any of them raises ``odo.CheckpointMismatchError`` instead of
+resuming from incompatible progress.
+
+
 Primary and Foreign Key Relationships
 -------------------------------------
 
