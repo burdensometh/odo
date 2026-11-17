@@ -44,6 +44,7 @@ def extras_require():
                           'mongo',
                           'mysql',
                           'postgres',
+                          'parquet',
                           'pytables',
                           'sas',
                           'ssh',

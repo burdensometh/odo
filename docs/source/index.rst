@@ -66,6 +66,7 @@ Formats
    hdfs
    hive
    mongo
+   parquet
    spark
    sas
    sql

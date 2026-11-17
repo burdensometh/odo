@@ -127,7 +127,13 @@ def keywords(func):
     """
     if isinstance(func, type):
         return keywords(func.__init__)
-    return inspect.getargspec(func).args
+    try:
+        signature = inspect.signature(func)
+    except (TypeError, ValueError):
+        return inspect.getargspec(func).args
+    return [name for name, parameter in signature.parameters.items()
+            if parameter.kind in (parameter.POSITIONAL_OR_KEYWORD,
+                                  parameter.KEYWORD_ONLY)]
 
 
 def cls_name(cls):
